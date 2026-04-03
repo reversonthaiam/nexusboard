@@ -15,3 +15,9 @@ export interface TasksState {
   items: Task[]
   filter: TaskStatus | 'all'
 }
+
+export interface SettingsState {
+  userName:      string
+  theme:         'light' | 'dark'
+  notifications: boolean
+}

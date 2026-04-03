@@ -27,6 +27,8 @@ export default function Dashboard() {
     { label: 'Done',        value: stats.done,        color: 'text-[#0f4c5c]' },
   ], [stats])
 
+  console.log(stats, 'stats')
+
   return (
     <div>
       <h2 className="text-2xl font-medium text-[#0f4c5c] mb-6">Dashboard</h2>
