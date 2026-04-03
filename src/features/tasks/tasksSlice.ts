@@ -67,24 +67,20 @@ const tasksSlice = createSlice({
   },
 })
 
-// ─── Actions exportadas ───────────────────────────────────────
 export const { addTask, updateTask, deleteTask, changeStatus, setFilter } =
   tasksSlice.actions
 
 export default tasksSlice.reducer
 
-// ─── Selectors ────────────────────────────────────────────────
 const selectItems = (state: RootState) => state.tasks.items
 const selectFilter = (state: RootState) => state.tasks.filter
 
-// Retorna tasks filtradas — recalcula só quando items ou filter mudam
 export const selectFilteredTasks = createSelector(
   [selectItems, selectFilter],
   (items, filter) =>
     filter === 'all' ? items : items.filter(t => t.status === filter)
 )
 
-// Retorna os contadores dos cards do Dashboard
 export const selectStats = createSelector([selectItems], (items) => ({
   total:       items.length,
   todo:        items.filter(t => t.status === 'todo').length,
