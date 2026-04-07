@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAppDispatch } from '../store/hooks'
+import { fetchTasks } from '../features/tasks/tasksSlice'
 import { TaskList } from '../features/tasks/TasksList'
 import { TaskForm } from '../features/tasks/TaskForm'
 import { Button } from '../components/ui/Button/Button'
 import type { Task } from '../store/types'
 
 export default function Tasks() {
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const dispatch                        = useAppDispatch()
+  const [isFormOpen, setIsFormOpen]     = useState(false)
+  const [editingTask, setEditingTask]   = useState<Task | null>(null)
+
+  useEffect(() => {
+    dispatch(fetchTasks())
+  }, [dispatch])
 
   function handleEdit(task: Task) {
     setEditingTask(task)

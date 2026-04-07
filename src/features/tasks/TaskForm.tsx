@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppDispatch } from '../../store/hooks'
-import { addTask, updateTask } from './tasksSlice'
+import { createTask, editTask } from './tasksSlice'
 import { Modal } from '../../components/ui/Modal/Modal'
 import { Input } from '../../components/ui/Input/Input'
 import { Button } from '../../components/ui/Button/Button'
@@ -27,8 +27,8 @@ const initialForm: FormState = {
 }
 
 export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
-  const dispatch          = useAppDispatch()
-  const [form, setForm]   = useState<FormState>(initialForm)
+  const dispatch            = useAppDispatch()
+  const [form, setForm]     = useState<FormState>(initialForm)
   const [errors, setErrors] = useState<Partial<FormState>>({})
 
   useEffect(() => {
@@ -54,22 +54,16 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
 
   function handleSubmit() {
     if (!validate()) return
-
     if (task) {
-      dispatch(updateTask({ ...task, ...form }))
+      dispatch(editTask({ ...task, ...form }))
     } else {
-      dispatch(addTask(form))
+      dispatch(createTask(form))
     }
-
     onClose()
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={task ? 'Edit task' : 'New task'}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={task ? 'Edit task' : 'New task'}>
       <div className="flex flex-col gap-4">
         <Input
           label="Title"
@@ -78,7 +72,6 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
           onChange={e => setForm({ ...form, title: e.target.value })}
           error={errors.title}
         />
-
         <Input
           label="Description"
           placeholder="Task description..."
@@ -86,7 +79,6 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
           onChange={e => setForm({ ...form, description: e.target.value })}
           error={errors.description}
         />
-
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-[#0f4c5c]">Status</label>
           <select
@@ -99,7 +91,6 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
             <option value="done">Done</option>
           </select>
         </div>
-
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-[#0f4c5c]">Priority</label>
           <select
@@ -112,7 +103,6 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
             <option value="high">High</option>
           </select>
         </div>
-
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmit}>

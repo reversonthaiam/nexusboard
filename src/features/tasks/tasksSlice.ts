@@ -1,97 +1,115 @@
-import { createSlice, createSelector } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import type { RootState } from "../../store";
-import type { Task, TasksState, TaskStatus } from "../../store/types";
+import { createSlice, createSelector, createAsyncThunk } from '@reduxjs/toolkit'
+import type { PayloadAction } from '@reduxjs/toolkit'
+import type { RootState } from '../../store'
+import type { Task, TasksState, TaskStatus } from '../../store/types'
+import { taskRepository } from '../../repositories/taskRepository'
 
+// ─── Async Thunks ─────────────────────────────────────────────
+export const fetchTasks = createAsyncThunk(
+  'tasks/fetchAll',
+  async () => {
+    return await taskRepository.getAll()
+  }
+)
+
+export const createTask = createAsyncThunk(
+  'tasks/create',
+  async (task: Omit<Task, 'id' | 'createdAt'>) => {
+    return await taskRepository.create(task)
+  }
+)
+
+export const editTask = createAsyncThunk(
+  'tasks/update',
+  async (task: Task) => {
+    return await taskRepository.update(task)
+  }
+)
+
+export const removeTask = createAsyncThunk(
+  'tasks/remove',
+  async (id: string) => {
+    await taskRepository.remove(id)
+    return id
+  }
+)
+
+// ─── State inicial ────────────────────────────────────────────
 const initialState: TasksState = {
-  items: [
-    {
-      id: "1",
-      title: "Criar layout do relatório mensal",
-      description: "Definir estrutura de seções e exportação PDF",
-      status: "todo",
-      priority: "high",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      title: "Revisar pull requests do time",
-      description: "Checar 3 PRs pendentes no repositório principal",
-      status: "in_progress",
-      priority: "medium",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "3",
-      title: "Configurar ambiente Docker",
-      description: "Dockerfile + docker-compose para o novo serviço",
-      status: "done",
-      priority: "low",
-      createdAt: new Date().toISOString(),
-    },
-  ],
-  filter: "all",
-};
+  items:   [],
+  filter:  'all',
+  loading: false,
+  error:   null,
+}
 
+// ─── Slice ────────────────────────────────────────────────────
 const tasksSlice = createSlice({
-  name: "tasks",
+  name: 'tasks',
   initialState,
   reducers: {
-    addTask(state, action: PayloadAction<Omit<Task, "id" | "createdAt">>) {
-      state.items.push({
-        ...action.payload,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-      });
-    },
-
-    updateTask(state, action: PayloadAction<Task>) {
-      const index = state.items.findIndex((t) => t.id === action.payload.id);
-      if (index !== -1) state.items[index] = action.payload;
-    },
-
-    deleteTask(state, action: PayloadAction<string>) {
-      state.items = state.items.filter((t) => t.id !== action.payload);
-    },
-
-    changeStatus(
-      state,
-      action: PayloadAction<{ id: string; status: TaskStatus }>,
-    ) {
-      const task = state.items.find((t) => t.id === action.payload.id);
-      if (task) task.status = action.payload.status;
-    },
-
-    setFilter(state, action: PayloadAction<TaskStatus | "all">) {
-      state.filter = action.payload;
+    setFilter(state, action: PayloadAction<TaskStatus | 'all'>) {
+      state.filter = action.payload
     },
   },
-});
+  extraReducers: (builder) => {
+    // fetchTasks
+    builder
+      .addCase(fetchTasks.pending, (state) => {
+        state.loading = true
+        state.error   = null
+      })
+      .addCase(fetchTasks.fulfilled, (state, action) => {
+        state.loading = false
+        state.items   = action.payload
+      })
+      .addCase(fetchTasks.rejected, (state) => {
+        state.loading = false
+        state.error   = 'Failed to load tasks'
+      })
 
-export const { addTask, updateTask, deleteTask, changeStatus, setFilter } =
-  tasksSlice.actions;
+    // createTask
+    builder
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.items.push(action.payload)
+      })
 
-export default tasksSlice.reducer;
+    // editTask
+    builder
+      .addCase(editTask.fulfilled, (state, action) => {
+        const index = state.items.findIndex(t => t.id === action.payload.id)
+        if (index !== -1) state.items[index] = action.payload
+      })
 
-const selectItems = (state: RootState) => state.tasks.items;
-const selectFilter = (state: RootState) => state.tasks.filter;
+    // removeTask
+    builder
+      .addCase(removeTask.fulfilled, (state, action) => {
+        state.items = state.items.filter(t => t.id !== action.payload)
+      })
+  },
+})
+
+export const { setFilter } = tasksSlice.actions
+export default tasksSlice.reducer
+
+// ─── Selectors ────────────────────────────────────────────────
+const selectItems  = (state: RootState) => state.tasks.items
+const selectFilter = (state: RootState) => state.tasks.filter
 
 export const selectFilteredTasks = createSelector(
   [selectItems, selectFilter],
   (items, filter) =>
-    filter === "all" ? items : items.filter((t) => t.status === filter),
-);
+    filter === 'all' ? items : items.filter(t => t.status === filter)
+)
 
 export const selectStats = createSelector([selectItems], (items) => ({
-  total: items.length,
-  todo: items.filter((t) => t.status === "todo").length,
-  in_progress: items.filter((t) => t.status === "in_progress").length,
-  done: items.filter((t) => t.status === "done").length,
-  progress:
-    items.length === 0
-      ? 0
-      : Math.round(
-          (items.filter((t) => t.status === "done").length / items.length) *
-            100,
-        ),
-}));
+  total:       items.length,
+  todo:        items.filter(t => t.status === 'todo').length,
+  in_progress: items.filter(t => t.status === 'in_progress').length,
+  done:        items.filter(t => t.status === 'done').length,
+  progress:    items.length === 0
+    ? 0
+    : Math.round((items.filter(t => t.status === 'done').length / items.length) * 100),
+}))
+
+export const selectLoading = (state: RootState) => state.tasks.loading
+export const selectError   = (state: RootState) => state.tasks.error
