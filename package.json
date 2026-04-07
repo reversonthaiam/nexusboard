@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.cjs",
+    "start": "json-server db.json --port $PORT",
     "dev": "vite",
     "api": "json-server --watch db.json --port 3001",
     "test": "jest",
