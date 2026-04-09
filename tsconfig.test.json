@@ -3,6 +3,8 @@
   "compilerOptions": {
     "module": "CommonJS",
     "verbatimModuleSyntax": false,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   }
 }
