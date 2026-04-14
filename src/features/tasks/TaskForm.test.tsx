@@ -16,7 +16,14 @@ jest.mock("../../repositories/taskRepository", () => ({
       priority: "medium",
       createdAt: "2026-01-01T00:00:00.000Z",
     }),
-    update: jest.fn(),
+    update: jest.fn().mockResolvedValue({
+      id: "1",
+      title: "Titulo atualizado",
+      description: "Descrição teste",
+      status: "todo",
+      priority: "medium",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    }),
     remove: jest.fn(),
   },
 }));
@@ -30,9 +37,8 @@ function makeStore() {
   });
 }
 
-
 it("Validar formulario", async () => {
-  const store = makeStore();
+  const store = makeStore()
 
   render(
     <Provider store={store}>
@@ -51,6 +57,46 @@ it("Validar formulario", async () => {
   fireEvent.click(screen.getByText("Create task"));
 
   await waitFor(() => {
-    expect(store.getState().tasks.items).toHaveLength(1)
+    expect(store.getState().tasks.items).toHaveLength(1);
+  });
+});
+
+it("Validar edição", async () => {
+  const tasks = {
+    id: "1",
+    title: "Task original", 
+    description: "Descrição teste",
+    status: "todo" as const,
+    priority: "medium" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  }
+
+  const store = configureStore({
+    reducer: { tasks: tasksReducer, settings: settingsReducer },
+    preloadedState: {
+      tasks: {
+        items: [tasks],
+        filter: 'all' as const,
+        loading: false,
+        error: null,
+      }
+    }
   })
+  
+  render(
+    <Provider store={store}>
+      <TaskForm isOpen task={tasks} onClose={() => {}} />
+    </Provider>,
+  );
+
+  fireEvent.change(screen.getByLabelText("Title"), {
+    target: { value: "Titulo atualizado" },
+  });
+
+  fireEvent.click(screen.getByText("Save changes"));
+
+  await waitFor(() => {
+    const task = store.getState().tasks.items.find((t) => t.id === "1");
+    expect(task?.title).toBe("Titulo atualizado");
+  });
 });
